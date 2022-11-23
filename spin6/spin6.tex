@@ -1,0 +1,311 @@
+\documentclass[11pt]{article}
+\usepackage{mathpazo}
+\usepackage{url}
+\usepackage{verbatim}
+
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+\usepackage[scaled]{luximono}
+\usepackage{latexsym}
+\usepackage{listings}
+\usepackage{ps}
+
+
+\textwidth=15cm
+\textheight=22cm
+\topmargin=0pt
+\headheight=0pt
+\oddsidemargin=1cm
+\headsep=0pt
+\renewcommand{\baselinestretch}{1.1}
+\setlength{\parskip}{0.20\baselineskip plus 1pt minus 1pt}
+\parindent=0pt
+
+\title{\textbf{Principles of the Spin Model Checker\\
+Supplementary Material on Spin Version 6}}
+
+\author{\textbf{Mordechai (Moti) Ben-Ari}\\
+\url{http://stwww.weizmann.ac.il/g-cs/benari/}}
+%\date{}
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\vfill
+
+\begin{center}
+Copyright 2010 by Mordechai (Moti) Ben-Ari.
+\end{center}
+
+This work is licensed under the Creative Commons Attribution
+Non-Commercial No Derivs 3.0 License. To view a copy of this license,
+visit \url{http://creativecommons.org/licenses/by-nc-nd/3.0/}; or, (b)
+send a letter to Creative Commons, 543 Howard Street, 5th Floor, San
+Francisco, California, 94105, USA.
+
+\newpage
+
+In December 2010, Version 6 of \spn{} was released; this version
+introduced new structures into the modeling language \prm{}. This
+document describes the new structures and shows how they can be used in
+the examples from \textit{Principles of the Spin Model Checker}. The
+latest software archive \p{ps-programs.zip} contains these modified
+programs.
+
+The new version of \spn{} also made changes to the format of its output
+data. This required some modifications of the \jspin{} development
+environment; the new version can be downloaded from
+\url{http://code.google.com/p/jspin/}.
+
+The modifications of \prm{} include: a \p{for}-statement that replaces
+the use of a macro; a \p{select}-statement for nondeterministic
+selection of values; the scope rules have been changed; formulas in
+linear temporal logic (LTL) can be included within the \prm{} source;
+LTL formulas can contain expressions; LTL formulas can use keywords for
+the temporal operators.
+
+Version 6 also supports multiple \p{never}-claims and synchronous
+products of claims but this will not be discussed here.
+
+The notation \S{}n.m refers to \textbf{Listing~n.m} in
+\textit{Principles of the Spin Model Checker}.
+
+\section{The \p{for}-statement}
+
+\prm{} uses the nondeterministic guarded command \p{do} to support
+loops. When you want a simple counting loop, the following code can used
+(\S{}1.8):
+
+\begin{frag}
+  byte i; 
+  i = 1; 
+  do 
+  :: i > 10 -> break 
+  :: else  ->
+       /* body of the loop */
+       i++
+  od;
+\end{frag}
+This code is frequently encapsulated in a pair of macros: \texttt{for}
+and \texttt{rof}.
+
+A new control structure implements a counting loop directly:  
+\begin{frag}
+  byte i; 
+  for (i : 1..10) {
+    /* body of the loop */
+  }
+\end{frag}
+
+This is equivalent to the following code which is different from that
+used in \S{}1.8:
+
+\newpage
+
+\begin{frag}
+  byte i; 
+  i = 1; 
+  do 
+  :: i<= 10 ->
+       /* body of the loop */
+       i++
+  :: else  -> break
+  od;
+\end{frag}
+
+
+The bounds can be expressions:
+\begin{frag}
+  for (i : 0..N-1)
+\end{frag}
+
+\prm{} differs from many programming languages in that the index
+variable must be explicitly declared prior to the loop. 
+
+Many of the examples (\S{}1.8, \S{}3.5, \S{}6.2, \S{}11.14)
+were changed to use the \p{for}-statement.
+
+\section{The \p{select}-statement}
+
+To choose a value nondeterministically, you can use an \p{if}-statement
+with true (absent) guards. For example, to choose the next row in the
+8-queens problem, we used (encapsulated within an \p{inline} construct
+\p{Choose} in \S{}11.5):
+
+\begin{frag}
+	if
+	:: row = 1
+	:: row = 2
+	   ...
+	:: row = 8
+	fi
+\end{frag}
+
+This can now be succinctly written as:
+\begin{frag}
+  select(row : 1..8)
+\end{frag}
+The bounds can be expressions and the variable must be previously defined.
+
+Since \p{true} and \p{false} are just names for the constants 1 and 0,
+the following is correct:
+\begin{frag}
+  bool b;
+  select(b : false..true)
+\end{frag}
+as a replacement for:
+\begin{frag}
+  bool b;
+  if :: b = false :: b = true fi
+\end{frag}
+
+The implementation of \p{select} uses a nondeterministic loop
+(Section~4.6.2):
+\begin{frag}
+  row = 1;
+  do
+  :: row < 8 -> row++
+  :: break
+  od
+\end{frag}
+
+\section{Scope rules}
+
+Previously, \p{inline} definitions did not create a new scope for
+variable declarations, although the syntax is implies that it
+does. Given the definition:
+\begin{frag}
+inline write(n) {
+  byte nsq;
+  nsq = n*n;
+  printf("n = %d, n squared = %d\n", n, nsq)  
+}
+\end{frag}
+
+The following is illegal:
+\begin{frag}
+active proctype P() {
+  byte a = 10, b = 12;
+  write(a);
+  write(b)
+}
+\end{frag}
+
+because the variable \p{nsq} is redeclared by \p{write(b)} within the
+scope of the \p{proctype}. \spn{}, however, runs the program as
+expected, although an error message is given. Now, the program runs
+without the error message because the scope of \p{nsq} is limited to the
+\p{inline} constructs.
+
+\warn{no dynamic scope}{\emph{\bfseries Do not} write \p{byte nsq =
+n*n;} in the \p{inline} definition!\\The scope rule refers only to the
+\emph{name} itself; all \emph{variables} within a \p{proctype} are still
+collected and placed at the beginning of the \p{proctype} and
+initialized \emph{once} when the \p{proctype} is activated.}
+
+Note: \S{}6.3 was and is illegal because an array name cannot be passed
+to an \p{inline} definition, although this is not expressly forbidden in
+the \prm{} reference manual.
+
+\newpage
+
+\section{LTL formulas}
+
+Consider an algorithm for solving the critical-section problem:
+\begin{frag}
+bool csp = false, csq = false;
+
+active proctype P() {
+  do
+  ::
+    ...
+    csp = true;   /* Enter critical section */
+    csp = false; /* Leave critical section */
+    ...
+  od
+}
+
+active proctype Q() { /* Similar */ }
+\end{frag}
+To verify mutual exclusion we have to show that the following LTL
+formula holds:
+\begin{frag}
+[]!(csp && csq)
+\end{frag}
+while to verify absence of starvation the formula is:
+\begin{frag}
+[]<>csp
+\end{frag}
+
+In \spn{} this is done by: (a) writing the LTL formula in a file (or
+an argument); (b) negating the formula; (c) translating it into a
+\p{never}-claim; (d) running a verification with the \p{never}-claim. In
+previous versions of \spn{}, the user had to negate the formula and then
+run a command to translate it into a \p{never}-claim; the
+\p{never}-claim was then included as an argument to the
+verification.\footnote{An environment can simplify the process. For
+example, \jspin{} automatically negates the LTL formula, translates it
+into a \p{never}-claim when a button is clicked and then includes the
+claim in the arguments to the verification.} Currently, the LTL formula
+can be written \emph{within} the \prm{} program:
+
+\begin{frag}
+bool csp = false, csq = false;
+
+ltl { []!(csp && csq) }
+\end{frag}
+\spn{} will \emph{automatically} negate the formula and translate it
+into a \p{never}-claim when the verification is performed.
+
+To simplify matters even further, several \emph{named} LTL formulas can
+be included and the choice of the formula to use is made when the
+verification is done:
+
+\begin{frag}
+ltl mutex { []!(csp && csq) }
+ltl nostarvation { []<>csp }
+\end{frag}
+
+When there is only one LTL formula in a program, just perform the
+verification (\verb+spin -a+, \verb+gcc+, \verb+pan+) and the formula
+will be automatically used by \spn{}. When there is more than one
+(named) LTL formula, you must specify which formula is to be used in a
+verification.
+
+\begin{runj}{selecting an LTL formula}
+Enter one \emph{name} in the text field labeled \p{LTL formula} and
+select \p{LTL name} from the toolbar or the \p{Convert} menu.
+\end{runj}
+
+\begin{runcl}{selecting an LTL formula}
+Specify one \emph{name} when the verification is done:
+\begin{frag}
+pan -N mutex
+\end{frag}
+\end{runcl}
+
+The inclusion of multiple LTL formulas within a \prm{} program
+simplifies the configuration management of a project because all the
+correctness properties are contained within the same file as the source
+code of the model.
+
+Additional new features concerning LTL formulas:
+\begin{itemize}
+\item Expressions can be used in an internal LTL formula, so it is no
+longer necessary to define symbols for this purpose:
+\p{ltl \{ [](critical <= 1) \}}.
+\item A remote reference is considered an expression, so
+\p{ltl \{ []!(P@cs && Q@cs) \}} can be given 
+as the correctness specification of \S{}5.3 without defining the symbol
+\p{mutex}. The formula must appear \emph{after} the
+\p{proctype}'s where the labels are defined.
+\item 
+Temporal operators can be given as keywords:
+\begin{frag}
+ltl mutex { always !(csp && csq) }
+ltl nostarvation { always eventually csp }
+\end{frag}
+\end{itemize}
+
+
+\end{document}

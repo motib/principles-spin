@@ -1,0 +1,22 @@
+\ProvidesFile{lstlang0.sty}
+%
+%  Language definition for Promela - Moti Ben-Ari, 2004
+%
+\lst@definelanguage{Promela}%
+  {morekeywords={%
+     active,assert,atomic,bit,bool,break,byte,chan,%
+     c_code,c_decl,c_expr,c_state,c_track,chan,define,D_proctype,do,d_step,%
+     else,empty,enabled,eval,false,fi,for,full,goto,hidden,if,include,init,inline,%
+     int,len,local,ltl,mtype,nempty,never,nfull,notrace,np_,_nr_pr,od,of,%
+     pc_value,pid,printf,printm,priority,proctype,provided,%
+     run,select,short,show,skip,timeout,trace,true,typedef,
+     unless,unsigned,xr,xs,_pid,_last,_},%
+   sensitive=true,%
+   morecomment=[s]{/*}{*/},%
+   morestring=[b]",%
+   morestring=[b]',%
+   moredelim=*[directive]\#,%
+   moredirectives={define,elif,else,endif,error,if,ifdef,ifndef,line,%
+      include,pragma,undef,warning}%
+  }[keywords,comments,strings,directives]%
+\endinput

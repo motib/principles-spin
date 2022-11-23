@@ -1,0 +1,52 @@
+% figures and tables are processed in small print
+ \def \@floatboxreset {%
+         \reset@font
+%        \small
+         \@setnobreak
+         \@setminipage
+}
+ 
+\renewcommand{\baselinestretch}{1.1}
+\raggedbottom
+\tabcolsep=4pt
+\renewcommand{\arraystretch}{1.1}
+\newcommand{\longpage}{\enlargethispage{\baselineskip}}
+
+\newenvironment*{adv}[2]{\medskip\noindent\textsf{\bfseries Advanced: #2}%
+\begin{center}\begin{minipage}{.9\textwidth}\index{#1}}{\end{minipage}\end{center}}
+
+\newcommand*{\warn}[2]{\begin{center}\framebox[.9\textwidth]{%
+\begin{minipage}{.85\textwidth}\vspace*{4pt}\begin{center}%
+\textsf{\bfseries\large Warning}\end{center}#2\vspace*{4pt}\end{minipage}}\index{warnings!#1}\end{center}}
+
+\newenvironment*{runj}[1]{\noindent\rule{\textwidth}{1pt}\\\noindent%
+\textsf{\bfseries\large jSpin}\begin{quote}\index{jspin@\protect\jspin{}!#1}}%
+{\end{quote}}
+
+\newenvironment*{runcl}[1]{\noindent\textsf{\bfseries\large Command line}%
+\begin{quote}\index{command line!#1}}{\end{quote}\rule[1ex]{\textwidth}{1pt}}
+
+% Names of languages and systems
+\newcommand*{\SMC}{\textit{SMC}}
+\newcommand*{\MLCS}{\textit{MLCS}}
+\newcommand*{\PCDP}{\textit{PCDP}}
+\newcommand*{\prm}{\textsc{Promela}}
+\newcommand*{\spn}{\textsc{Spin}}
+\newcommand*{\jspin}{\textsc{jSpin}}
+
+% Definitions for listings.sty
+\lstset{language=Promela,
+basicstyle=\ttfamily,commentstyle=,
+showstringspaces=false,numbers=left,numberstyle=\scriptsize,xleftmargin=1cm,escapechar=@,
+frame=lines,framexleftmargin=1cm,framexrightmargin=0cm,columns=[l]flexible,captionpos=t}
+
+% Typeset a floating program: #1=file name, #2=name for index, #3=caption, #4=label
+\newcommand*{\programfl}[4]{%
+\lstinputlisting[float=htbp,caption=#3\index{program!#2},label=#4]% %,lineskip=1pt] 
+{../listings/#1.pml}}
+
+% Typeset a fragment of a program
+\lstnewenvironment{frag}{\lstset{numbers=none,frame=none}}{}
+
+% Typeset program text inline
+\newcommand*{\p}[1]{\lstinline|#1|}
